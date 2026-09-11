@@ -109,11 +109,11 @@ function renderHud() {
     b.className = "prop" + (propSelected === p ? " sel" : "");
     b.title = tip;
     b.innerHTML = `${icon}<span class="cnt">${hud.props[p] || 0}</span>`;
-    b.onclick = () => {
+    bindTap(b, () => {
       if ((hud.props[p] || 0) <= 0) return;
       propSelected = propSelected === p ? null : p;
       renderHud();
-    };
+    });
     box.appendChild(b);
   }
 }
@@ -209,7 +209,7 @@ function render(now) {
   }
   preview = preview.filter((p) => now - p.t0 < 1500);
 
-  if (hover) {
+  if (hover && (!isMobile || touch)) {
     const [hx, hy] = hover;
     const px = Math.round(hx * cellPx - cam.x);
     const py = Math.round(hy * cellPx - cam.y);
@@ -310,8 +310,123 @@ cv.addEventListener("wheel", (e) => {
   scheduleVp();
 }, { passive: false });
 
-$("#btnReset").onclick = () => send({ t: "reset" });
-$("#btnNew").onclick = () => send({ t: "reset" });
+/* touchend 直接触发 + click 兜底：规避 iOS Safari 合成 click 丢失/延迟问题 */
+const bindTap = (el, fn) => {
+  if (!el) return;
+  let tt = 0;
+  el.addEventListener("touchend", () => { tt = Date.now(); fn(); });
+  el.addEventListener("click", () => { if (Date.now() - tt < 700) return; fn(); });
+};
+const $tap = (sel, fn) => bindTap($(sel), fn);
+$tap("#btnReset", () => send({ t: "reset" }));
+$tap("#btnNew", () => send({ t: "reset" }));
+$tap("#btnNewMap", () => { send({ t: "reset" }); $("#menu").classList.add("hidden"); });
+$tap("#btnMenu", () => $("#menu").classList.toggle("hidden"));
+$tap("#btnCloseMenu", () => $("#menu").classList.add("hidden"));
+$tap("#btnHelp", () => { $("#menu").classList.add("hidden"); $("#touchHelp").classList.remove("hidden"); });
+$tap("#btnHelpOk", () => { localStorage.setItem("helpSeen", "1"); $("#touchHelp").classList.add("hidden"); });
+
+/* ---------------- touch (mobile) ---------------- */
+const isMobile = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+let touch = null;
+let pinch = null;
+let lastTap = { t: 0, key: null };
+const TAP_MAX = 320, TAP_SLOP = 10, LONG_MS = 500;
+const buzz = (ms) => navigator.vibrate && navigator.vibrate(ms);
+
+cv.addEventListener("touchstart", (e) => {
+  if (e.touches.length >= 2) {
+    if (touch) clearTimeout(touch.timer);
+    touch = null;
+    hover = null;
+    lastTap = { t: 0, key: null };
+    const a = e.touches[0], b = e.touches[1];
+    pinch = {
+      d0: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1,
+      px0: cellPx,
+      wx: (cam.x + (a.clientX + b.clientX) / 2) / cellPx,
+      wy: (cam.y + (a.clientY + b.clientY) / 2) / cellPx,
+    };
+    e.preventDefault();
+    return;
+  }
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = cv.getBoundingClientRect();
+  const [cx, cy] = cellAt(t.clientX - rect.left, t.clientY - rect.top);
+  hover = [cx, cy];
+  touch = { id: t.identifier, sx: t.clientX, sy: t.clientY, camx: cam.x, camy: cam.y, cx, cy, t0: performance.now(), moved: false, fired: false, timer: null };
+  touch.timer = setTimeout(() => {
+    if (!touch || touch.moved) return;
+    touch.fired = true;
+    buzz(30);
+    const c = cache.get(KEY(touch.cx, touch.cy));
+    if (c && c.s === 1) send({ t: "preview", x: touch.cx, y: touch.cy });
+    else if (!c || c.s === 0 || c.s === 2) send({ t: "flag", x: touch.cx, y: touch.cy });
+  }, LONG_MS);
+}, { passive: false });
+
+cv.addEventListener("touchmove", (e) => {
+  if (pinch) {
+    if (e.touches.length < 2) return;
+    e.preventDefault();
+    const a = e.touches[0], b = e.touches[1];
+    const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    const mx = (a.clientX + b.clientX) / 2, my = (a.clientY + b.clientY) / 2;
+    cellPx = Math.min(60, Math.max(10, pinch.px0 * (d / pinch.d0)));
+    cam.x = pinch.wx * cellPx - mx;
+    cam.y = pinch.wy * cellPx - my;
+    scheduleVp();
+    return;
+  }
+  if (!touch) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const dx = t.clientX - touch.sx, dy = t.clientY - touch.sy;
+  if (!touch.moved && !touch.fired && (Math.abs(dx) > TAP_SLOP || Math.abs(dy) > TAP_SLOP)) {
+    touch.moved = true;
+    clearTimeout(touch.timer);
+  }
+  if (touch.moved) {
+    cam.x = touch.camx - dx;
+    cam.y = touch.camy - dy;
+    scheduleVp();
+  }
+  const rect = cv.getBoundingClientRect();
+  hover = cellAt(t.clientX - rect.left, t.clientY - rect.top);
+}, { passive: false });
+
+const endTouch = (e) => {
+  if (e && e.touches && e.touches.length < 2) {
+    if (pinch) { pinch = null; lastTap = { t: 0, key: null }; return; }
+  }
+  if (!touch) return;
+  clearTimeout(touch.timer);
+  const tch = touch;
+  touch = null;
+  hover = null;
+  if (tch.fired || tch.moved) { lastTap = { t: 0, key: null }; return; }
+  if (propSelected) {
+    send({ t: "prop", prop: propSelected, x: tch.cx, y: tch.cy });
+    buzz(15);
+    lastTap = { t: 0, key: null };
+    return;
+  }
+  const now = performance.now();
+  const key = KEY(tch.cx, tch.cy);
+  if (now - lastTap.t < TAP_MAX && lastTap.key === key) {
+    send({ t: "reveal", x: tch.cx, y: tch.cy });
+    buzz(15);
+    lastTap = { t: 0, key: null };
+  } else {
+    lastTap = { t: now, key };
+  }
+};
+cv.addEventListener("touchend", endTouch);
+cv.addEventListener("touchcancel", () => { if (touch) { clearTimeout(touch.timer); touch = null; } pinch = null; hover = null; });
+
+if (isMobile && !localStorage.getItem("helpSeen")) $("#touchHelp").classList.remove("hidden");
 
 connect();
 resize();

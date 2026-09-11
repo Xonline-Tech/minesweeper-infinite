@@ -19,3 +19,11 @@
 
 - 在本机 shell 工具里重启服务**不要**用 `pkill -f "node server.js"`——模式会匹配到执行命令的 shell 自身并把自己杀掉。正确方式：用 `ss -tlnp | grep 8420` 找 PID 再 `kill`。
 - 后台常驻服务用 `setsid nohup node server.js > /tmp/mine.log 2>&1 < /dev/null &`，否则进程会随 shell 工具会话退出。
+
+## 移动端/前端坑（已踩过）
+
+- **iOS Safari 别只绑 `onclick`**：iPad 上大概率收不到合成 click（表现为按钮可见但点了没反应，且时灵时不灵）。统一走 `public/app.js` 的 `bindTap(el, fn)`：`touchend` 直接触发 + `click` 兜底、700ms 去重窗口；HUD 按钮全部适用，新增按钮也必须用它。
+- **覆盖层显隐必须用 ID 级规则**：如 `#overlay.hidden { display:none }`。通用 `.hidden` 会被 `#overlay { display:flex }` 的 ID 优先级压过，导致结算面板开局就强制显示、reset 后藏不掉。
+- **静态响应必须带 `Cache-Control: no-cache`**（server.js 已设）：否则浏览器启发式缓存旧版 `app.js`/`index.html`，新旧混搭会让缺元素的绑定脚本 null 报错、后续初始化全部中断。
+- **移动端样式约定**：媒体查询统一写 `(pointer: coarse), (hover: none), (max-width: 640px)`（`hover:none` 兜底 iPad“桌面网站”模式）；窄屏 HUD 固定两行（`#props` 用 `order:9 + flex-basis:100%` 独占第二行，`scrollbar-width:none` + `::-webkit-scrollbar{display:none}` 隐藏滚动条但保留滑动）。
+- 画布 `touch-action:none` 只作用于 canvas；HUD 上的按钮需 `touch-action:manipulation` 消除双击候选延迟。

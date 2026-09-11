@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(404);
     return res.end("not found");
   }
-  res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });
+  res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
   fs.createReadStream(file).pipe(res);
 });
 
