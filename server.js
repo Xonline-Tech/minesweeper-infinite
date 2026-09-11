@@ -346,7 +346,7 @@ wss.on("connection", (ws) => {
 
 resetGame();
 if (require.main === module) {
-  server.listen(PORT, () => console.log(`无限画布扫雷已启动: http://localhost:${PORT}`));
+  server.listen(PORT, () => console.log(`无限画布扫雷已启动: 监听 0.0.0.0:${PORT}`));
 }
 
 module.exports = { hash32, mineRaw, num, server, wss, resetGame };
