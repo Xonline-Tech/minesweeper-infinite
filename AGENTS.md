@@ -5,7 +5,8 @@
 ## 命令
 
 - 启动：`npm start`（即 `node server.js`，默认端口 8420，`PORT` 环境变量可覆盖）
-- 测试：先启动服务，再 `node test/ws-test.js`（无测试框架、无 `npm test`；只跑单文件）
+- Docker：`docker compose up -d --build`（对外端口 `HOST_PORT` 可覆盖，默认 8420；容器内固定 8420）
+- 测试：先启动服务，再 `node test/ws-test.js`（无测试框架、无 `npm test`；只跑单文件；可用 `WS_URL=ws://host:port` 指向非默认地址，如 docker 容器）
 
 ## 关键约束
 

@@ -11,6 +11,16 @@ npm start          # 默认 http://localhost:8420 ，可用 PORT=xxxx 覆盖
 
 浏览器打开 `http://localhost:8420` 即可游戏，无需构建步骤。
 
+### Docker Compose 部署
+
+```bash
+docker compose up -d --build     # 默认映射宿主机 8420
+HOST_PORT=9000 docker compose up -d   # 自定义宿主机端口
+docker compose logs -f / down    # 查看日志 / 停止
+```
+
+镜像基于 `node:22-alpine`，以非 root 用户运行，内置 HTTP 健康检查；容器内固定监听 8420，对外端口由 `HOST_PORT` 控制。
+
 ## 操作说明
 
 | 操作 | 效果 |
@@ -99,6 +109,10 @@ minesweeper-infinite/
 ```bash
 npm start &        # 先启动服务
 node test/ws-test.js
+
+# 对 Docker 容器（8421 端口）跑同一套测试
+HOST_PORT=8421 docker compose up -d --build
+WS_URL=ws://localhost:8421 node test/ws-test.js
 ```
 
 测试通过 WebSocket 客户端验证：视角雷数统计、预览信息不泄露、chord/连锁翻开、道具接口。每次运行会先 `reset`（注意：会清空所有已连接客户端的当前局）。

@@ -1,7 +1,7 @@
 "use strict";
 const WebSocket = require("ws");
 
-const ws = new WebSocket("ws://localhost:8420");
+const ws = new WebSocket(process.env.WS_URL || "ws://localhost:8420");
 const got = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 ws.on("message", (raw) => got.push(JSON.parse(raw)));
