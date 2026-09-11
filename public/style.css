@@ -1,0 +1,49 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background: #161a23; font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif; }
+#cv { position: fixed; inset: 0; display: block; }
+
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 8px 14px; background: rgba(18, 22, 32, .88); color: #dde3f0;
+  border-bottom: 1px solid #2c3447; user-select: none; font-size: 14px;
+}
+#hud .title { font-weight: 700; letter-spacing: 1px; }
+#stats { color: #a9b4c9; }
+#lives { letter-spacing: 2px; }
+#props { display: flex; gap: 6px; margin-left: auto; }
+
+button {
+  background: #2b3346; color: #dde3f0; border: 1px solid #3d4a63;
+  border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 15px; position: relative;
+}
+button:hover { background: #364159; }
+.prop .cnt {
+  position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px;
+  background: #d64545; color: #fff; border-radius: 8px; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; padding: 0 4px;
+}
+.prop.sel { outline: 2px solid #ffd166; background: #4a4327; }
+#btnReset, #btnNew { font-size: 14px; }
+
+#help {
+  position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+  color: #6c7893; font-size: 12px; background: rgba(18,22,32,.7);
+  padding: 4px 12px; border-radius: 12px; z-index: 10; user-select: none; white-space: nowrap;
+}
+
+#toasts { position: fixed; top: 56px; right: 14px; z-index: 20; display: flex; flex-direction: column; gap: 6px; }
+.toast {
+  background: rgba(34, 41, 58, .95); border: 1px solid #3d4a63; color: #e8edf7;
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; transition: opacity .5s;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.toast.fade { opacity: 0; }
+
+#overlay { position: fixed; inset: 0; z-index: 30; background: rgba(10, 12, 18, .78); display: flex; align-items: center; justify-content: center; }
+#overlay.hidden { display: none; }
+.panel { text-align: center; background: #1e2534; border: 1px solid #3d4a63; border-radius: 14px; padding: 36px 48px; }
+.panel .boom { font-size: 64px; }
+.panel .big { color: #ff6b6b; font-size: 28px; font-weight: 700; margin: 8px 0; }
+.panel .small { color: #a9b4c9; margin-bottom: 18px; }
+.panel button { font-size: 16px; padding: 8px 20px; }

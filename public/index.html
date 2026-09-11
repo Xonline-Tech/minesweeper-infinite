@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>无限画布扫雷</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="hud">
+  <span class="title">💣 无限扫雷</span>
+  <span id="stats">💣 视角内: 0 · 🚩 已标: 0 · ⛏️ 已开: 0</span>
+  <span id="lives">❤️❤️❤️</span>
+  <span id="props"></span>
+  <button id="btnReset" title="换一张新地图">🔄 新地图</button>
+</div>
+<canvas id="cv"></canvas>
+<div id="toasts"></div>
+<div id="help">左键 翻开 · 右键 标旗 · 中键数字 3×3 预览(标完雷自动翻开,红色=危险) · 按住空格+任意键拖拽 平移 · 滚轮 缩放 · 选中道具后左键使用</div>
+<div id="overlay" class="hidden">
+  <div class="panel">
+    <div class="boom">💥</div>
+    <div class="big">游戏结束</div>
+    <div class="small" id="finalScore"></div>
+    <button id="btnNew">🔄 开始新地图</button>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
